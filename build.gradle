@@ -7,7 +7,6 @@ buildscript {
 plugins {
   id 'net.minecrell.licenser' version '0.3'
   id 'org.ajoberstar.grgit' version '4.0.0'
-  id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
 
 apply plugin: 'maven'
@@ -18,8 +17,11 @@ apply plugin: 'idea'
 
 repositories {
     mavenCentral()
+    maven {
+        name 'mojang'
+        url 'https://libraries.minecraft.net/'
+    }
 }
-
 
 ext {
     TAG = '0.0'
@@ -66,7 +68,11 @@ ext {
 }
 
 dependencies {
-    compile 'net.sf.jopt-simple:jopt-simple:5.0.4'
+    implementation 'net.sf.jopt-simple:jopt-simple:5.0.4'
+    implementation('net.minecraft:launchwrapper:1.12') {
+        exclude group: 'org.ow2.asm'
+    }
+    implementation 'com.google.guava:guava:21.0'
 }
 
 compileJava {
@@ -79,19 +85,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     manifest.from(MANIFEST)
 }
 
-task relocateShadowJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation) {
-    target = tasks.shadowJar
-    prefix = "${project.group}.${project.name}.reloc"
-}
-
-shadowJar {
-    dependsOn(relocateShadowJar)
-    classifier 'fatjar'
-    manifest.from(MANIFEST)
-}
-
 artifacts {
-    archives shadowJar
     archives sourcesJar
 }
 
