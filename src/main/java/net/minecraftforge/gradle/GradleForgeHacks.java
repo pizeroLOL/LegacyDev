@@ -83,7 +83,7 @@ public class GradleForgeHacks {
         // set property.
         Set<String> coremodsSet = new HashSet<>();
         if (!Strings.isNullOrEmpty(System.getProperty(COREMOD_VAR)))
-            coremodsSet.addAll(Splitter.on(',').splitToList(System.getProperty(COREMOD_VAR)));
+            Splitter.on(',').split(System.getProperty(COREMOD_VAR)).forEach(coremodsSet::add);
         coremodsSet.addAll(coreMap.keySet());
         System.setProperty(COREMOD_VAR, Joiner.on(',').join(coremodsSet));
 
@@ -264,13 +264,13 @@ public class GradleForgeHacks {
 
         private void readCsv(File file, Map<String, String> map) throws IOException {
             LOGGER.log(Level.DEBUG, "Reading CSV file: {}", file);
-            Splitter split = Splitter.on(',').trimResults().limit(3);
+            Splitter splitter = Splitter.on(',').trimResults().limit(3);
             for (String line : Files.readLines(file, Charsets.UTF_8)) {
                 if (line.startsWith("searge")) // header line
                     continue;
 
-                List<String> splits = split.splitToList(line);
-                map.put(splits.get(0), splits.get(1));
+                Iterator<String> splits = splitter.split(line).iterator();
+                map.put(splits.next(), splits.next());
             }
         }
 
