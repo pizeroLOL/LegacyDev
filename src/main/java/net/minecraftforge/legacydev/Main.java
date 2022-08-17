@@ -51,6 +51,8 @@ public class Main {
             LOGGER.info("Natives: " + natives);
             handleNatives(natives);
         }
+        
+        if (Boolean.parseBoolean(getenv("extractResources"))) extractResources();
 
         String mainClass = getenv("mainClass");
         if (mainClass == null)
@@ -89,6 +91,8 @@ public class Main {
     }
 
     protected void handleNatives(String path) { }
+    
+    protected void extractResources() { }
 
     protected Map<String, String> getDefaultArguments() {
         return new LinkedHashMap<>();
