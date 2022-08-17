@@ -63,27 +63,29 @@ public class Main {
             System.setProperty("net.minecraftforge.gradle.GradleStart.srg.srg-mcp", srg2mcp);
         }
 
-        String[] cleanArgs = parseArgs(args);
+        List<String> cleanArgs = parseArgs(args);
+        
+        GradleForgeHacks.searchCoremods(cleanArgs);
 
         StringBuilder b = new StringBuilder();
         b.append('[');
-        for (int x = 0; x < cleanArgs.length; x++) {
-            b.append(cleanArgs[x]);
-            if ("--accessToken".equalsIgnoreCase(cleanArgs[x])) {
+        int size = cleanArgs.size();
+        for (int x = 0; x < size; x++) {
+            b.append(cleanArgs.get(x));
+            if ("--accessToken".equalsIgnoreCase(cleanArgs.get(x))) {
                 b.append(", {REDACTED}");
                 x++;
             }
 
-            if (x < cleanArgs.length - 1)
+            if (x < size - 1)
                 b.append(", ");
         }
         b.append(']');
-        LOGGER.info("Running with arguments: " + b.toString());
-
+        LOGGER.info("Running with arguments: " + b);
 
         Class<?> cls = Class.forName(mainClass);
         Method main = cls.getDeclaredMethod("main", String[].class);
-        main.invoke(null, new Object[] { cleanArgs });
+        main.invoke(null, new Object[] { cleanArgs.toArray(new String[0]) });
     }
 
     protected void handleNatives(String path) { }
@@ -92,7 +94,7 @@ public class Main {
         return new LinkedHashMap<>();
     }
 
-    private String[] parseArgs(String[] args) {
+    private List<String> parseArgs(String[] args) {
         final Map<String, String> defaults = getDefaultArguments();
 
         final OptionParser parser = new OptionParser();
@@ -132,7 +134,7 @@ public class Main {
 
         lst.addAll(extras);
 
-        return lst.toArray(new String[lst.size()]);
+        return lst;
     }
 
     protected String getenv(String name) {
