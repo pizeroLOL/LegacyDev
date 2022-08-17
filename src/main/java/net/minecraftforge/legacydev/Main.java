@@ -117,12 +117,12 @@ public class Main {
         LOGGER.info("Extra: " + extras);
 
         List<String> lst = new ArrayList<>();
-        defaults.forEach((k,v) -> {
-            if (!nullOrEmpty(v)) {
-                lst.add("--" + k);
-                lst.add(v);
+        for (Map.Entry<String, String> entry : defaults.entrySet()) {
+            if (!nullOrEmpty(entry.getValue())) {
+                lst.add("--" + entry.getKey());
+                lst.add(entry.getValue());
             }
-        });
+        }
 
         String tweak = getenv("tweakClass");
         if (!nullOrEmpty(tweak)) {

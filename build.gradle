@@ -36,7 +36,7 @@ def gitVersion = {
 group = 'net.minecraftforge'
 archivesBaseName = 'legacydev'
 version = gitVersion()
-targetCompatibility = sourceCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+targetCompatibility = sourceCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.7'
 
 license {
     header project.file('LICENSE-header.txt')
