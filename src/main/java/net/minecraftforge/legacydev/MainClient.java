@@ -18,11 +18,13 @@
  */
 package net.minecraftforge.legacydev;
 
+import argo.jdom.JdomParser;
+import argo.jdom.JsonNode;
+import argo.jdom.JsonStringNode;
+import argo.saj.InvalidSyntaxException;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import argo.jdom.JsonRootNode;
 
 import java.io.File;
 import java.io.IOException;
@@ -86,22 +88,22 @@ public class MainClient extends Main {
             
             if (Files.notExists(resourcesDir)) Files.createDirectory(resourcesDir);
             
-            Gson gson = new Gson();
-            JsonObject node = gson.fromJson(Files.newBufferedReader(assetsDir.resolve("indexes/pre-1.6.json"), StandardCharsets.UTF_8), JsonObject.class);
+            JsonRootNode node = new JdomParser().parse(Files.newBufferedReader(assetsDir.resolve("indexes/pre-1.6.json"), StandardCharsets.UTF_8));
             final Multimap<String, String> hashToName = HashMultimap.create();
-            for (Map.Entry<String, JsonElement> entry : node.getAsJsonObject("objects").entrySet()) {
-                hashToName.put(entry.getValue().getAsJsonObject().get("hash").getAsString(), entry.getKey());
+            
+            for (Map.Entry<JsonStringNode, JsonNode> entry :  node.getObjectNode("objects").entrySet()) {
+                hashToName.put(entry.getValue().getStringValue("hash"), entry.getKey().getText());
             }
             
             final AtomicInteger count = new AtomicInteger(0);
             Files.walkFileTree(assetsDir.resolve("objects"), new FileVisitor<Path>() {
                 @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     Collection<String> names = hashToName.get(file.getFileName().toString());
                     for (String name : names) {
                         Path dest = resourcesDir.resolve(name);
@@ -120,12 +122,12 @@ public class MainClient extends Main {
                 }
 
                 @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                public FileVisitResult visitFileFailed(Path file, IOException exc) {
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
                     return FileVisitResult.CONTINUE;
                 }
             });
@@ -135,7 +137,7 @@ public class MainClient extends Main {
                 long delta = endMillis - startMillis;
                 LOGGER.log(Level.INFO, "Extracted {0} resources in {1} ms", new Object[] { count.get(), delta });
             }
-        } catch (IOException e) {
+        } catch (IOException | InvalidSyntaxException e) {
             LOGGER.severe("Failed to extract resources");
             e.printStackTrace();
         }

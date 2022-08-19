@@ -1,19 +1,20 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
-
 plugins {
     id 'java'
     id 'maven-publish'
     id 'org.cadixdev.licenser' version '0.6.1'
     id 'org.ajoberstar.grgit' version '4.0.0'
-    id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
 
 repositories {
-    mavenCentral()
+    maven {
+        name 'Su5eD'
+        url 'https://maven.su5ed.dev/releases'
+    }
     maven {
         name 'mojang'
         url 'https://libraries.minecraft.net/'
     }
+    mavenCentral()
 }
 
 ext {
@@ -34,9 +35,12 @@ def gitVersion = {
 }
 
 group = 'net.minecraftforge'
-archivesBaseName = 'legacydev'
 version = gitVersion()
 targetCompatibility = sourceCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.7'
+
+java {
+    withSourcesJar()
+}
 
 license {
     header project.file('LICENSE-header.txt')
@@ -60,43 +64,14 @@ ext {
     }
 }
 
-configurations {
-    shade { }
-    
-    implementation.extendsFrom shade
-}
-
 dependencies {
     implementation 'net.sf.jopt-simple:jopt-simple:5.0.4'
     implementation 'com.google.guava:guava:12.0.1'
-    shade 'com.google.code.gson:gson:2.3'
+    implementation 'net.sourceforge.argo:argo:2.25'
 }
 
 compileJava {
     options.encoding = 'UTF-8'
-}
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-    manifest.from(MANIFEST)
-}
-
-task relocateShadowJar(type: ConfigureShadowRelocation) {
-    target = tasks.shadowJar
-    prefix = "${project.group}.${project.name}.reloc"
-}
-
-shadowJar {
-    dependsOn(relocateShadowJar)
-    classifier 'fatjar'
-    manifest.from(MANIFEST)
-    configurations = [project.configurations.shade]
-}
-
-artifacts {
-    archives shadowJar
-    archives sourcesJar
 }
 
 jar {
@@ -106,9 +81,8 @@ jar {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            artifact sourcesJar
-            artifact shadowJar
-            artifact jar
+            from components.java
+            
             pom {
                 name = project.archivesBaseName
                 packaging = 'jar'
