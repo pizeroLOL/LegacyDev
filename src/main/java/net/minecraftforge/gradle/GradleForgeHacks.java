@@ -32,6 +32,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -172,6 +174,7 @@ public class GradleForgeHacks {
     // here and not in the tweaker package because classloader hell
     @SuppressWarnings("unused")
     public static final class AccessTransformerTransformer implements IClassTransformer {
+        private static final String AT_CLASS = "net.minecraftforge.fml.common.asm.transformers.AccessTransformer";
         private static final String AT_MOD_CLASS = "net.minecraftforge.fml.common.asm.transformers.AccessTransformer$Modifier";
         
         public AccessTransformerTransformer() {
@@ -179,32 +182,39 @@ public class GradleForgeHacks {
         }
 
         private void doStuff(LaunchClassLoader classloader) {
-            // the class and instance of ModAccessTransformer
-            Class<? extends IClassTransformer> clazz = null;
-            IClassTransformer instance = null;
+            Class<?> atClass;
+            try {
+                atClass = Class.forName(AT_CLASS);
+            } catch (ClassNotFoundException e) {
+                LOGGER.log(Level.ERROR, "Could not find AccessTransformer class.");
+                return;
+            }
 
-            // find the instance I want. AND grab the type too, since thats better than Class.forName()
+            // Find all non-default access transformers
+            List<IClassTransformer> accessTransformers = new ArrayList<>();
             for (IClassTransformer transformer : classloader.getTransformers()) {
-                if (transformer.getClass().getCanonicalName().endsWith(MOD_ATD_CLASS)) {
-                    clazz = transformer.getClass();
-                    instance = transformer;
+                Class<? extends IClassTransformer> clazz = transformer.getClass();
+                if (clazz != atClass && atClass.isInstance(transformer)) {
+                    accessTransformers.add(transformer);
                 }
             }
 
             // impossible! but i will ignore it.
-            if (clazz == null) {
+            if (accessTransformers.isEmpty()) {
                 LOGGER.log(Level.ERROR, "ModAccessTransformer was somehow not found.");
                 return;
             }
 
             // grab the list of Modifiers I wanna mess with
-            Collection<Object> modifiers;
+            Collection<Object> modifiers = new ArrayList<>();
             try {
                 // super class of ModAccessTransformer is AccessTransformer
-                Field f = clazz.getSuperclass().getDeclaredFields()[1]; // its the modifiers map. Only non-static field there.
+                Field f = atClass.getDeclaredFields()[1]; // its the modifiers map. Only non-static field there.
                 f.setAccessible(true);
 
-                modifiers = ((com.google.common.collect.Multimap) f.get(instance)).values();
+                for (IClassTransformer transformer : accessTransformers) {
+                    modifiers.addAll(((com.google.common.collect.Multimap) f.get(transformer)).values());
+                }
             } catch (Throwable t) {
                 LOGGER.log(Level.ERROR, "AccessTransformer.modifiers field was somehow not found...");
                 return;
