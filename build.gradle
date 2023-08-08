@@ -43,7 +43,7 @@ def gitVersion = {
 
 group = 'net.minecraftforge'
 archivesBaseName = 'legacydev'
-version = gitVersion()
+version = '0.2.4.0'
 targetCompatibility = sourceCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 license {
